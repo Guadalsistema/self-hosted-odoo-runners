@@ -10,14 +10,16 @@ set -e
 : "${GITHUB_URL:?Falta GITHUB_URL}"
 : "${RUNNER_TOKEN:?Falta RUNNER_TOKEN}"
 
-# Si no hemos descargado aún el runner, lo bajamos y extraemos
+# Si no hemos descargado aún el runner, lo bajamos primero en /tmp y luego lo movemos
 if [ ! -f ./bin/Runner.Listener ]; then
-  echo "=> Descargando actions-runner..."
-  VERSION="${RUNNER_VERSION:-2.300.2}"  # ajusta a la última versión estable
-  curl -fsSL -o actions-runner.tar.gz \
+  echo "=> Descargando actions-runner en /tmp..."
+  VERSION="${RUNNER_VERSION:-2.300.2}"
+  TMPDIR=$(mktemp -d)
+  curl -fsSL -o "$TMPDIR/actions-runner.tar.gz" \
     "https://github.com/actions/runner/releases/download/v${VERSION}/actions-runner-linux-x64-${VERSION}.tar.gz"
-  tar -xzf actions-runner.tar.gz
-  rm actions-runner.tar.gz
+  echo "=> Extrayendo en la carpeta del runner…"
+  tar -xzf "$TMPDIR/actions-runner.tar.gz" -C .
+  rm -rf "$TMPDIR"
 fi
 
 # Configura el runner (solo la primera vez o si cambian vars)
