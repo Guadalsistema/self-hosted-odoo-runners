@@ -1,0 +1,33 @@
+name: Example Odoo tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: odoo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U odoo" --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v2
+      - name: Build test image
+        run: docker build -t odoo-runner:17.0 .
+      - name: Clone addon repository
+        run: git clone https://example.com/your/repo.git /tmp/extra-addons
+      - name: Run Odoo tests
+        run: |
+          docker run --network host \
+            --entrypoint odoo \
+            -v /tmp/extra-addons:/mnt/extra-addons \
+            odoo-runner:17.0 \
+            -i base --db_host=localhost --db_user=odoo --db_password=odoo --stop-after-init --test-enable
