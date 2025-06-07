@@ -1,4 +1,4 @@
-FROM odoo/odoo:17.0
+FROM odoo:17.0
 
 # 1. Dependencias básicas
 RUN apt-get update && \
