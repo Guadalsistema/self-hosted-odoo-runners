@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: postgres:latest
         env:
           POSTGRES_USER: odoo
           POSTGRES_PASSWORD: odoo
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: docker/setup-buildx-action@v2
       - name: Build test image
-        run: docker build -t gh-selfhosted-runner:latest .
+        run: docker build -t odoo-runner:17.0 .
       - name: Clone addon repository
         run: git clone https://example.com/your/repo.git /tmp/extra-addons
       - name: Run Odoo tests
@@ -29,5 +29,5 @@ jobs:
           docker run --network host \
             --entrypoint odoo \
             -v /tmp/extra-addons:/mnt/extra-addons \
-            gh-selfhosted-runner:latest \
+            odoo-runner:17.0 \
             -i base --db_host=localhost --db_user=odoo --db_password=odoo --stop-after-init --test-enable
