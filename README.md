@@ -51,8 +51,7 @@ A self-contained Docker image that runs a GitHub Actions self-hosted runner insi
 Clone this repo (or place the files in a folder) and build the Docker image:
 
 ```bash
-docker build \
-  -t gh-selfhosted-runner:latest .
+docker build -t gh-selfhosted-runner:latest .
 ```
 
 The image uses `/mnt/extra-addons` as working directory so your Odoo modules
