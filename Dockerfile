@@ -1,5 +1,7 @@
 FROM odoo:17.0
 
+user root
+
 # 1. Dependencias básicas
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
