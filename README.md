@@ -66,6 +66,7 @@ The `odoo-test-example.yml` workflow shows how to spin up a PostgreSQL service,
 clone your modules into `/mnt/extra-addons` and run Odoo's test suite inside the
 container.
 
+## How to create a runner
 ```bash
 docker run -d \
   --name gh-runner-01 \
