@@ -15,5 +15,9 @@ RUN chown -R runner:runner /home/runner
 COPY entrypoint.sh /home/runner/actions-runner/entrypoint.sh
 RUN chmod +x /home/runner/actions-runner/entrypoint.sh
 
+# Crear carpeta de trabajo final donde se clonarán los módulos
+RUN mkdir -p /mnt/extra-addons && chown -R runner:runner /mnt/extra-addons
+WORKDIR /mnt/extra-addons
+
 USER runner
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/home/runner/actions-runner/entrypoint.sh"]

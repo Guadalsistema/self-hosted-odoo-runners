@@ -48,7 +48,20 @@ A self-contained Docker image that runs a GitHub Actions self-hosted runner insi
 
 ## 🏗️ Build the Image
 
-Clone this repo (or place the files in a folder), then:
+Clone this repo (or place the files in a folder) and build the Docker image:
 
 ```bash
 docker build -t gh-selfhosted-runner:latest .
+```
+
+The image uses `/mnt/extra-addons` as working directory so your Odoo modules
+can be cloned there.
+
+This repository also provides a GitHub Actions workflow (`build-image.yml`) that
+automatically builds the image on each push.
+
+## 🧪 Example Workflow
+
+The `odoo-test-example.yml` workflow shows how to spin up a PostgreSQL service,
+clone your modules into `/mnt/extra-addons` and run Odoo's test suite inside the
+container.
