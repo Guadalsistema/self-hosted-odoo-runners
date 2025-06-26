@@ -1,6 +1,6 @@
 FROM odoo:17.0
 
-user root
+USER root
 
 # 1. Dependencias básicas
 RUN apt-get update && \
