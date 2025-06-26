@@ -1,7 +1,7 @@
 FROM odoo:17.0
 
 ###############################################################################
-# 1. Paquetes básicos + PGDG + PostgreSQL 17 (solo binarios, sin servicio)
+# 1. Paquetes básicos + PGDG + PostgreSQL 16 (solo binarios, sin servicio)
 ###############################################################################
 USER root
 RUN set -eux; \

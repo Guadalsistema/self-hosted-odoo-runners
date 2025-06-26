@@ -1,0 +1,72 @@
+name: Odoo 17 – CI tests (PG local)
+
+on:
+  push:
+    branches: [ "17.0" ]
+  pull_request:
+    branches: [ "17.0" ]
+
+jobs:
+  test:
+    runs-on: [ self-hosted, odoo-17 ]   # tu runner con Odoo + psql
+
+    env:
+      PGUSER: odoo
+      PGPASSWORD: odoo
+      PGDATABASE: odoo
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Export PG bindir to PATH
+        run: |
+          PG_BINDIR=$(ls -d /usr/lib/postgresql/*/bin | head -1)
+          echo "$PG_BINDIR" >> "$GITHUB_PATH"
+
+      # ---------- PostgreSQL ephemeral ----------
+      - name: Init & start local PostgreSQL (pg_ctl)
+        id: pg
+        shell: bash
+        run: |
+          set -e
+          PG_HOME="${{ runner.temp }}/pg"
+          PGPORT=$(shuf -i 20000-40000 -n1)
+          echo "PG_HOME=$PG_HOME" >> "$GITHUB_ENV"
+          echo "PGPORT=$PGPORT" >> "$GITHUB_ENV"
+
+          mkdir -p "$PG_HOME/data"
+          pwfile=$(mktemp)
+          echo "$PGPASSWORD" > "$pwfile"
+
+          # initdb vía pg_ctl: no requiere que el binario esté en PATH
+          pg_ctl initdb -D "$PG_HOME/data" \
+                -o "--encoding=UTF8 --username=$PGUSER --pwfile=$pwfile"
+
+          # arranque rápido, sólo socket unix y puerto aleatorio
+          pg_ctl -D "$PG_HOME/data" -w start -o "-F -k $PG_HOME -p $PGPORT"
+
+      # ---------- Odoo tests ----------
+      - name: Run Odoo tests
+        shell: bash
+        run: |
+          odoo \
+            -i base \
+            --db_host=/tmp \
+            --db_port=$PGPORT \
+            --db_user=$PGUSER \
+            --db_password=$PGPASSWORD \
+            --without-demo=False \
+            --test-tags=guadalsistema \
+            --addons-path=$GITHUB_WORKSPACE \
+            --stop-after-init
+
+      # ---------- Shutdown ----------
+      - name: Stop PostgreSQL
+        if: always()
+        shell: bash
+        run: |
+          pg_ctl -D "${{ runner.temp }}/pg/data" -m fast stop || true
+
