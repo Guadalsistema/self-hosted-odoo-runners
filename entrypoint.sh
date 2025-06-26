@@ -11,7 +11,7 @@ RUNNER_NO_DEFAULT_LABELS="${RUNNER_NO_DEFAULT_LABELS:-false}"
 
 # === descarga binarios solo la primera vez ============
 if [[ ! -f ./bin/Runner.Listener ]]; then
-  VERSION="${RUNNER_VERSION:-2.300.2}"
+  VERSION="${RUNNER_VERSION:-2.325.0}"
   echo "=> Descargando actions-runner v$VERSION…"
   tmp=$(mktemp -d)
   curl -fsSL -o "$tmp/runner.tgz" \
