@@ -22,22 +22,18 @@ if [ ! -f ./bin/Runner.Listener ]; then
   rm -rf "$TMPDIR"
 fi
 
-# Configura el runner (solo la primera vez o si cambian vars)
-./config.sh --unattended \
-  --url "$GITHUB_URL" \
-  --token "$RUNNER_TOKEN" \
-  --name "${RUNNER_NAME:-$(hostname)}" \
-  --work "${RUNNER_WORKDIR:-_work}" \
-  --replace
-
-# Función para limpieza al recibir SIGTERM
-cleanup() {
-  echo "=> Desregistrando runner…"
-  ./config.sh remove --unattended --token "$RUNNER_TOKEN"
-  exit 0
-}
-
-trap 'cleanup' SIGINT SIGTERM
+# 2. Registra el runner sólo si no lo estaba ya
+if [[ ! -f .runner ]]; then
+	# Configura el runner (solo la primera vez o si cambian vars)
+	./config.sh --unattended \
+	  --url "$GITHUB_URL" \
+	  --token "$RUNNER_TOKEN" \
+	  --name "${RUNNER_NAME:-$(hostname)}" \
+	  --work "${RUNNER_WORKDIR:-/mnt/extra-addons}" \
+	  --replace
+else
+  echo "=> Runner ya configurado, saltando «config.sh»"
+fi
 
 # Arranca el listener (bloqueante)
 exec ./run.sh
