@@ -52,9 +52,15 @@ jobs:
       - name: Run Odoo tests
         shell: bash
         run: |
+          # Ensure Odoo has a writable data directory and filestore
+          DATA_DIR="${{ runner.temp }}/odoo-data"
+          mkdir -p "$DATA_DIR"  # owned by runner already
+
           odoo \
+            -d odoo \
             -i base \
-            --db_host=/tmp \
+            --data-dir=$DATA_DIR \
+            --db_host=$PG_HOME \
             --db_port=$PGPORT \
             --db_user=$PGUSER \
             --db_password=$PGPASSWORD \
