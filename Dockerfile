@@ -48,6 +48,9 @@ RUN mkdir -p /mnt/extra-addons && \
 # 5. Usuario de ejecución
 ###############################################################################
 USER runner
+
+RUN pip install --no-cache-dir 'pypdf'
+
 WORKDIR /home/runner/actions-runner
 ENTRYPOINT ["/home/runner/actions-runner/entrypoint.sh"]
 
