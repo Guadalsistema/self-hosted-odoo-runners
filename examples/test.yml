@@ -1,14 +1,14 @@
-name: Odoo 17 – CI tests (PG local)
+name: Odoo 16 – CI tests (PG local)
 
 on:
   push:
-    branches: [ "17.0" ]
+    branches: [ "16.0" ]
   pull_request:
-    branches: [ "17.0" ]
+    branches: [ "16.0" ]
 
 jobs:
   test:
-    runs-on: [ self-hosted, odoo-17 ]   # tu runner con Odoo + psql
+    runs-on: [ self-hosted, odoo-16 ]   # tu runner con Odoo + psql
 
     env:
       PGUSER: odoo
@@ -58,7 +58,7 @@ jobs:
 
           odoo \
             -d odoo \
-            -i base \
+            -i base,your_module \
             --data-dir=$DATA_DIR \
             --db_host=$PG_HOME \
             --db_port=$PGPORT \

@@ -1,4 +1,4 @@
-FROM odoo:17.0
+FROM odoo:16.0
 
 ###############################################################################
 # 1. Paquetes básicos + PGDG + PostgreSQL 16 (solo binarios, sin servicio)
