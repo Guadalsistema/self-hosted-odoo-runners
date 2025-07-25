@@ -1,4 +1,4 @@
-FROM odoo:17.0
+FROM odoo:18.0
 
 ###############################################################################
 # 1. Paquetes básicos + PGDG + PostgreSQL 16 (solo binarios, sin servicio)
@@ -19,7 +19,7 @@ RUN set -eux; \
     \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        postgresql-16 postgresql-client-16 && \
+        postgresql-17 postgresql-client-17 && \
     \
     rm -rf /var/lib/apt/lists/*
 

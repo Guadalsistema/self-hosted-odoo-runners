@@ -2,13 +2,13 @@ name: Odoo 17 – CI tests (PG local)
 
 on:
   push:
-    branches: [ "17.0" ]
+    branches: [ "18.0" ]
   pull_request:
-    branches: [ "17.0" ]
+    branches: [ "18.0" ]
 
 jobs:
   test:
-    runs-on: [ self-hosted, odoo-17 ]   # tu runner con Odoo + psql
+    runs-on: [ self-hosted, odoo-18 ]   # tu runner con Odoo + psql
 
     env:
       PGUSER: odoo
