@@ -23,6 +23,9 @@ RUN set -eux; \
     \
     rm -rf /var/lib/apt/lists/*
 
+# Update the PATH environment variable
+ENV PATH="/usr/lib/postgresql/16/bin:${PATH}"
+
 ###############################################################################
 # 2. Usuario y carpetas del runner
 ###############################################################################
