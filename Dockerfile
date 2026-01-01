@@ -6,9 +6,13 @@ FROM odoo:17.0
 USER root
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
+	curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+	apt-get remove -y nodejs libnode-dev libnode72 && \
+	apt-get autoremove -y && \
+	\
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl gnupg lsb-release jq git ca-certificates sudo procps && \
+        curl gnupg lsb-release jq git ca-certificates sudo procps nodejs && \
     \
     curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
         gpg --dearmor -o /usr/share/keyrings/postgresql.gpg && \
@@ -22,6 +26,8 @@ RUN set -eux; \
         postgresql-16 postgresql-client-16 && \
     \
     rm -rf /var/lib/apt/lists/*
+
+
 
 ###############################################################################
 # 2. Usuario y carpetas del runner
