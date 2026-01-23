@@ -1,15 +1,15 @@
 FROM odoo:17.0
 
 ###############################################################################
-# 1. Paquetes básicos + PGDG + PostgreSQL 16 (solo binarios, sin servicio)
+# 1. Paquetes básicos + PGDG + PostgreSQL 16 + Redis (solo binarios)
 ###############################################################################
 USER root
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
-	curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-	apt-get remove -y nodejs libnode-dev libnode72 && \
-	apt-get autoremove -y && \
-	\
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get remove -y nodejs libnode-dev libnode72 && \
+    apt-get autoremove -y && \
+    \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         curl gnupg lsb-release jq git ca-certificates sudo procps nodejs && \
@@ -23,7 +23,8 @@ RUN set -eux; \
     \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        postgresql-16 postgresql-client-16 && \
+        postgresql-16 postgresql-client-16 \
+        redis-server redis-tools && \
     \
     rm -rf /var/lib/apt/lists/*
 
@@ -59,4 +60,3 @@ RUN pip install --no-cache-dir 'pypdf'
 
 WORKDIR /home/runner/actions-runner
 ENTRYPOINT ["/home/runner/actions-runner/entrypoint.sh"]
-
