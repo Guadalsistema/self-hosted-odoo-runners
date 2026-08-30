@@ -1,31 +1,16 @@
-FROM odoo:17.0
+FROM python:3.12-slim
 
 ###############################################################################
-# 1. Paquetes básicos + PGDG + PostgreSQL 16 + Redis (solo binarios)
+# 1. Basic utilities for the GitHub Actions runner
 ###############################################################################
 USER root
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get remove -y nodejs libnode-dev libnode72 && \
-    apt-get autoremove -y && \
-    \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl gnupg lsb-release jq git ca-certificates sudo procps nodejs && \
-    \
-    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
-        gpg --dearmor -o /usr/share/keyrings/postgresql.gpg && \
-    \
-    echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] \
-        http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | \
-        tee /etc/apt/sources.list.d/pgdg.list > /dev/null && \
-    \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        postgresql-16 postgresql-client-16 \
-        redis-server redis-tools && \
-    \
+        bash ca-certificates curl git gzip jq make procps sudo tar \
+        libgssapi-krb5-2 libicu76 liblttng-ust1t64 libssl3t64 libunwind8 \
+        libgcc-s1 libstdc++6 zlib1g && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -46,17 +31,9 @@ COPY entrypoint.sh /home/runner/actions-runner/entrypoint.sh
 RUN chmod +x /home/runner/actions-runner/entrypoint.sh
 
 ###############################################################################
-# 4. Carpeta para add-ons externos
-###############################################################################
-RUN mkdir -p /mnt/extra-addons && \
-    chown -R runner:runner /mnt/extra-addons
-
-###############################################################################
-# 5. Usuario de ejecución
+# 4. Usuario de ejecución
 ###############################################################################
 USER runner
-
-RUN pip install --no-cache-dir 'pypdf'
 
 WORKDIR /home/runner/actions-runner
 ENTRYPOINT ["/home/runner/actions-runner/entrypoint.sh"]
