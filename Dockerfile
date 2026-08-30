@@ -1,4 +1,4 @@
-FROM odoo:17.0
+FROM docker.io/library/odoo:17.0
 
 ###############################################################################
 # 1. Paquetes básicos + PGDG + PostgreSQL 16 + Redis (solo binarios)
