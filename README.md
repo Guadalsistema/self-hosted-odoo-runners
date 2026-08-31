@@ -1,175 +1,100 @@
-# Dockerized GitHub Actions Self-Hosted Python Runner
+# Ubuntu 24.04 organization self-hosted runner
 
-A self-contained Docker image that runs the official GitHub Actions self-hosted
-runner inside a container. The image is a generic Python build environment:
-workflows decide what to install and which commands to run.
-
-## Overview
-
-- Downloads, registers, and starts the official `actions/runner` binary.
-- Supports repository or organization registration with a short-lived token.
-- Reuses an existing registration when `.runner` is present.
-- Supports configurable runner name, work directory, version, and labels.
-- Can preserve runner files, registration, workspaces, and caches with volumes.
-- Captures no application-specific assumptions; workflow commands are arbitrary.
-
-## Image contents
-
-The image is based on `python:3.12-slim`. It provides:
-
-- Python 3.12, `pip`, and the standard-library `venv` module
-- The `make` binary, plus common runner utilities such as Bash, Git, curl,
-  jq, and tar
-
-No repository Makefile is provided. The `make` binary is available so each
-project can provide and invoke its own Makefile, if desired.
-
-Dependencies and virtual environments belong to the workflow. A workflow
-should create its own virtual environment and install the project dependencies
-it needs rather than relying on dependencies baked into this image.
-
-## Prerequisites
-
-- Docker Engine 20.10 or newer
-- A GitHub self-hosted runner registration token
-
-Create a token from **Repository or Organization Settings → Actions →
-Runners → New self-hosted runner**. Registration tokens expire shortly after
-they are generated.
-
-## Configuration
-
-`entrypoint.sh` accepts command-line options and environment variables.
-Command-line options take precedence when both are provided.
-
-| Variable | Required | Description | Default |
-|----------|----------|-------------|---------|
-| `GITHUB_URL` | Yes | Repository or organization URL, such as `https://github.com/myOrg/myRepo`. | None |
-| `RUNNER_TOKEN` | Yes | Short-lived GitHub runner registration token, not a personal access token. | None |
-| `RUNNER_NAME` | No | Name displayed for the runner. Existing runners with the same name are replaced during registration. | Container hostname |
-| `RUNNER_WORKDIR` | No | Job work directory; relative paths are resolved from `/home/runner/actions-runner`. | `_work` |
-| `RUNNER_VERSION` | No | [`actions/runner`](https://github.com/actions/runner/releases) version to download, without `v`. | `2.336.0` |
-| `RUNNER_LABELS` | No | Comma-separated custom labels, without spaces. | No custom labels |
-| `RUNNER_NO_DEFAULT_LABELS` | No | Set to exactly `true` to omit `self-hosted`, `linux`, and `x64`. | `false` |
-
-Equivalent command-line options are `--url`, `--token`, `--name`, `--workdir`,
-`--version`, `--labels`, `--no-default-labels`, `--default-labels`, and
-`--help`.
-
-Registration settings are applied only when `.runner` does not exist.
-Restarting the same container reuses its registration; changing registration
-settings does not reconfigure an already registered runner. `GITHUB_URL` and
-`RUNNER_TOKEN` are required on every start, including starts that reuse
-`.runner`. `RUNNER_VERSION` is used only when the runner binary has not already
-been downloaded.
-
-## Build the image
-
-```bash
-docker build -t python-runner:latest .
-```
-
-The repository also contains a workflow that builds `python-runner` on pushes
-to the `self-hosted-python` branch.
-
-## Start a runner
-
-```bash
-docker run -d \
-  --restart unless-stopped \
-  --name python-runner-01 \
-  -e GITHUB_URL="https://github.com/myOrg/myRepo" \
-  -e RUNNER_TOKEN="YOUR_REGISTRATION_TOKEN" \
-  -e RUNNER_NAME="python-runner-01" \
-  -e RUNNER_LABELS="python" \
-  -v /var/lib/python-runner/_work:/home/runner/actions-runner/_work \
-  python-runner:latest
-```
-
-### Environment file
-
-Avoid putting the registration token in shell history by using a restricted
-environment file:
-
-```dotenv
-GITHUB_URL=https://github.com/myOrg/myRepo
-RUNNER_TOKEN=YOUR_REGISTRATION_TOKEN
-RUNNER_NAME=python-runner-01
-RUNNER_LABELS=python
-```
-
-```bash
-chmod 600 runner.env
-docker run -d --restart unless-stopped --name python-runner-01 \
-  --env-file runner.env \
-  -v /var/lib/python-runner/_work:/home/runner/actions-runner/_work \
-  python-runner:latest
-```
-
-Prefer an environment file for long-running containers because command-line
-arguments may be visible through process-inspection tools.
-
-## Use the runner in a workflow
-
-The recommended custom label is `python`. A workflow owns its dependency and
-virtual-environment setup and may run any project command:
+This repository builds one persistent, trusted, x64 organization runner. It
+has no hosted VM tool cache and does not install Podman by default. Select it
+explicitly:
 
 ```yaml
-jobs:
-  test:
-    runs-on: [self-hosted, python]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Create environment and install dependencies
-        run: |
-          python -m venv .venv
-          .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/python -m pip install -r requirements.txt
-      - name: Run project checks
-        run: .venv/bin/python -m pytest
-      - name: Run an arbitrary project command
-        run: make test
+runs-on: [self-hosted, linux, x64, ubuntu-24.04]
 ```
 
-If `RUNNER_NO_DEFAULT_LABELS=true`, omit `self-hosted`, `linux`, and `x64` and
-select the runner using its custom label.
+Register exactly one runner in the `Default` runner group. The `runner` user
+has passwordless `sudo`; only reviewed trusted workflows may use it.
 
-## Command-line invocation
+## Registration and persistence
 
-The image passes arguments to `entrypoint.sh`, so registration options can be
-provided without environment variables:
+The baked runner application is in `/home/runner/actions-runner`. Do **not**
+mount a volume over that directory: doing so hides the application and
+entrypoint baked into the image. Only `_work` may be persisted separately.
+The cleanup hook always uses the fixed trusted root
+`/home/runner/actions-runner/_work`; `RUNNER_WORKDIR`, arbitrary hook roots, and
+symlinked workspaces are not supported. Cleanup uses descriptor-relative,
+no-follow deletion and removes only an exact `<repository>/<workspace>` leaf,
+never the work root, structural parents, or `_actions`, `_temp`, `_tool`, and
+`_PipelineMapping`. Linux mount crossings, including mounted descendants such
+as exposed `/dev/fuse` filesystems, are rejected by `openat2`; unsupported
+kernels and resolution failures remain fail-closed. Unsafe or missing paths
+fail nonzero and are left for investigation.
+
+On first registration, create `runner.env` (mode 600) containing:
+
+```dotenv
+GITHUB_URL=https://github.com/ORG
+RUNNER_TOKEN=ONE_TIME_ORGANIZATION_REGISTRATION_TOKEN
+RUNNER_NAME=guadalbackup
+```
+
+After the first successful registration, remove `RUNNER_TOKEN` from
+`runner.env`. The bootstrap token is short-lived and must never be passed to
+jobs. A restart of this same long-lived container reuses `.runner` and does
+not require a token.
+
+## guadalbackup deployment
+
+The host uses rootless Podman. Log in with a dedicated GitHub PAT scoped only
+to `read:packages`, then run one persistent container. Replace the placeholder
+with the digest printed by the manual publication workflow:
 
 ```bash
-docker run -d --name python-runner-01 python-runner:latest \
-  --url "https://github.com/myOrg/myRepo" \
-  --token "YOUR_REGISTRATION_TOKEN" \
-  --name "python-runner-01" \
-  --labels "python"
+printf '%s' "$GHCR_READ_PACKAGES_PAT" | podman login ghcr.io \
+  --username YOUR_GITHUB_USERNAME --password-stdin
+podman volume create guadalbackup-runner-work
+# No extra command; registration options come from runner.env.
+podman run -d --name guadalbackup --restart=unless-stopped \
+  --device /dev/fuse \
+  --env-file ./runner.env \
+  --volume guadalbackup-runner-work:/home/runner/actions-runner/_work \
+  ghcr.io/Guadalsistema/self-hosted-odoo-runners@sha256:...
 ```
 
-The listener runs in the foreground of the container and is not deregistered
-when the container stops. Remove unused runners through GitHub's runner
-settings before deleting their persistent registration data.
+There is no `--privileged`, socket mount, or seccomp relaxation. `/dev/fuse`
+is the only special runtime requirement for a trusted workflow that installs
+and tests rootless nested Podman; Podman is not installed in this image.
 
-## Persistence and security
+## Manual digest rollout and rollback
 
-The `_work` volume preserves job workspaces and caches, but not the `.runner`
-registration file. Restarting the same container preserves registration;
-removing and recreating it performs a new registration and requires a fresh
-token.
-
-To preserve registration and downloaded runner files when recreating the
-container, use a named volume for the complete runner directory:
+Publication is manual (`workflow_dispatch`) and publishes only `linux/amd64`.
+Record the resulting immutable digest. A rollout is a new registration, not a
+restart: first stop and remove the old container, delete its old registration
+in the GitHub organization’s **Settings → Actions → Runners** page, obtain a
+fresh registration token, update `runner.env`, and recreate the same name:
 
 ```bash
-docker volume create python-runner-data
-docker run -d --name python-runner-01 --env-file runner.env \
-  -v python-runner-data:/home/runner/actions-runner \
-  python-runner:latest
+podman stop guadalbackup || true
+podman rm guadalbackup || true
+# In GitHub: delete the old guadalbackup registration (and any legacy entry).
+# Put a fresh RUNNER_TOKEN in runner.env, then remove it after registration.
+podman run -d --replace --name guadalbackup --restart=unless-stopped \
+  --device /dev/fuse --env-file ./runner.env \
+  --volume guadalbackup-runner-work:/home/runner/actions-runner/_work \
+  ghcr.io/Guadalsistema/self-hosted-odoo-runners@sha256:NEW_DIGEST
 ```
 
-Do not bind-mount an empty host directory at
-`/home/runner/actions-runner`: it hides the image entrypoint and prevents the
-container from starting. Treat registration tokens and workflow secrets as
-sensitive, grant the runner only the access it needs, and review workflows
-before allowing them to run on a self-hosted machine.
+To roll back, repeat the same stop/remove, GitHub registration deletion, and
+fresh-token registration process with the previously recorded image digest.
+Do not assume an existing legacy registration gains labels automatically.
+
+If migrating the old Python runner, explicitly remove that Python runner in
+GitHub first, then re-register `guadalbackup` with the fresh token and no
+`python` label. Verify the old `python` label is gone and `ubuntu-24.04`
+exists before enabling jobs; labels are not added automatically to the legacy
+registration.
+
+## Image and CI
+
+The official x64 Actions runner archive is pinned and checksum-verified in the
+image. The Dockerfile rejects non-amd64 bases. CI builds and verifies
+`linux/amd64`; only the manual workflow dispatch publishes to GHCR, and only
+that publish job has `packages: write` permission. The image contains the
+subordinate UID/GID ranges needed if a trusted workflow installs rootless
+Podman inside the runner.

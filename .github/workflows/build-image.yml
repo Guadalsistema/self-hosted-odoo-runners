@@ -1,41 +1,59 @@
-name: Build Docker image
+name: Build Ubuntu 24.04 runner image
 
 on:
   push:
-    branches: [ "self-hosted-python" ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: docker/setup-buildx-action@v2
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
       - name: Build image
-        run: docker build -t python-runner:self-hosted-python .
-      - name: Verify Python runner image
+        run: docker build --platform linux/amd64 -t ubuntu-runner:test .
+      - name: Verify Ubuntu runner image
         run: |
           set -eu
-          image=python-runner:self-hosted-python
+          image=ubuntu-runner:test
           docker run --rm --entrypoint /bin/sh "$image" -c '
             set -eu
             test "$(id -un)" = runner
-            python --version | grep -E "^Python 3\\.12(\\.|$)"
-            pip --version
-            python -m venv /tmp/runner-test-venv
-            test -x /tmp/runner-test-venv/bin/python
+            sudo -n true
+            command -v bash curl git gzip jq make ps sudo tar
+            ! command -v podman
+            test -x /home/runner/actions-runner/bin/Runner.Listener
+            test -x /usr/local/libexec/cleanup-workspace-helper
+            test "$(stat -c %u /usr/local/bin/cleanup-workspace.sh)" = 0
+            ! command -v gcc
+            /home/runner/actions-runner/bin/Runner.Listener --version
             make --version
           '
-          runner_version=2.336.0
-          docker run --rm --entrypoint /bin/sh \
-            -e RUNNER_VERSION="$runner_version" "$image" -c '
-            set -eu
-            tmp=$(mktemp -d)
-            trap "rm -rf \"$tmp\"" EXIT
-            curl -fsSL -o "$tmp/runner.tgz" \
-              "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
-            mkdir "$tmp/runner"
-            tar -xzf "$tmp/runner.tgz" -C "$tmp/runner"
-            cd "$tmp/runner"
-            ./bin/Runner.Listener --version
-          '
           docker run --rm "$image" --help
+          if docker run --rm "$image" >/tmp/runner-startup.log 2>&1; then exit 1; fi
+          grep -q 'requires GITHUB_URL and RUNNER_TOKEN' /tmp/runner-startup.log
+          docker run --rm --entrypoint /bin/bash -v "$PWD/tests:/tests:ro" "$image" \
+            /tests/test-cleanup-hook.sh /usr/local/bin/cleanup-workspace.sh
+
+  publish:
+    needs: build
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ github.repository }}:manual-${{ github.run_id }}
+      - name: Emit image digest
+        run: docker buildx imagetools inspect "ghcr.io/${{ github.repository }}:manual-${{ github.run_id }}" --format '{{.Manifest.Digest}}'
