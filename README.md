@@ -96,5 +96,6 @@ The official x64 Actions runner archive is pinned and checksum-verified in the
 image. The Dockerfile rejects non-amd64 bases. CI builds and verifies
 `linux/amd64`; only the manual workflow dispatch publishes to GHCR, and only
 that publish job has `packages: write` permission. The image contains the
-subordinate UID/GID ranges needed if a trusted workflow installs rootless
-Podman inside the runner.
+namespace helpers, file capabilities, and subordinate UID/GID ranges needed if
+a trusted workflow installs rootless Podman inside the runner. The fixed runner
+UID/GID is `999`, so separately mounted work volumes retain stable ownership.

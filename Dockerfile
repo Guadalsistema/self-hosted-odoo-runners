@@ -18,15 +18,19 @@ RUN test "$(dpkg --print-architecture)" = amd64
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash ca-certificates curl git gzip jq make procps sudo tar \
     libgssapi-krb5-2 libicu74 liblttng-ust1t64 libssl3 libunwind8 \
-    libgcc-s1 libstdc++6 zlib1g \
+    libcap2-bin libgcc-s1 libstdc++6 uidmap zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --system runner && useradd --system --gid runner --create-home runner \
+RUN groupadd --system --gid 999 runner \
+    && useradd --system --uid 999 --gid runner --create-home runner \
     && echo 'runner ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/runner \
     && chmod 0440 /etc/sudoers.d/runner \
     && mkdir -p /home/runner/actions-runner \
-    && printf 'runner:100000:65536\n' > /etc/subuid \
-    && printf 'runner:100000:65536\n' > /etc/subgid \
+    && printf 'runner:1:998\nrunner:1000:64536\n' > /etc/subuid \
+    && printf 'runner:1:998\nrunner:1000:64536\n' > /etc/subgid \
+    && chmod u-s /usr/bin/newuidmap /usr/bin/newgidmap \
+    && setcap cap_setuid=ep /usr/bin/newuidmap \
+    && setcap cap_setgid=ep /usr/bin/newgidmap \
     && chown -R runner:runner /home/runner
 
 WORKDIR /home/runner/actions-runner
