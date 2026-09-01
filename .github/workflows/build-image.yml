@@ -19,10 +19,11 @@ jobs:
           docker run --rm --entrypoint /bin/sh "$image" -c '
             set -eu
             test "$(id -un)" = runner
-            python --version | grep -E "^Python 3\\.12(\\.|$)"
+            python --version | grep -E "^Python 3\\.14(\\.|$)"
             pip --version
             python -m venv /tmp/runner-test-venv
             test -x /tmp/runner-test-venv/bin/python
+            /tmp/runner-test-venv/bin/python -m pip install "grpcio>=1.83"
             make --version
           '
           runner_version=2.336.0

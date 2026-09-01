@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 ###############################################################################
 # 1. Basic utilities for the GitHub Actions runner

@@ -15,9 +15,9 @@ workflows decide what to install and which commands to run.
 
 ## Image contents
 
-The image is based on `python:3.12-slim`. It provides:
+The image is based on `python:3.14-slim`. It provides:
 
-- Python 3.12, `pip`, and the standard-library `venv` module
+- Python 3.14, `pip`, and the standard-library `venv` module
 - The `make` binary, plus common runner utilities such as Bash, Git, curl,
   jq, and tar
 
