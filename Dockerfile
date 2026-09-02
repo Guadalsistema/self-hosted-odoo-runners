@@ -24,11 +24,14 @@ RUN set -eux; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         postgresql-16 postgresql-client-16 \
-        redis-server redis-tools && \
+        redis-server redis-tools nginx && \
     \
     rm -rf /var/lib/apt/lists/*
 
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 
+RUN npx --yes playwright@1.62.1 install --with-deps chromium && \
+    chmod -R a+rX /opt/ms-playwright
 
 ###############################################################################
 # 2. Usuario y carpetas del runner
