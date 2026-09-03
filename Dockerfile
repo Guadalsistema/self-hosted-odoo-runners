@@ -51,7 +51,7 @@ RUN set -eux; \
      \
      apt-get update && \
      apt-get install -y --no-install-recommends \
-         postgresql-16 postgresql-client-16 \
+         postgresql-16 postgresql-client-16 zip unzip \
          redis-server redis-tools nginx=1.30.4-1~jammy && \
      [ "$(dpkg-query -W -f='${Version}' nginx)" = 1.30.4-1~jammy ] && \
      rm -f "$nginx_sources" "$nginx_keyring" && \
