@@ -3,6 +3,8 @@ name: Build Docker image
 on:
   push:
     branches: [ "17.0" ]
+  pull_request:
+    branches: [ "17.0" ]
 
 jobs:
   build:
@@ -12,3 +14,14 @@ jobs:
       - uses: docker/setup-buildx-action@v2
       - name: Build image
         run: docker build -t odoo-runner:17.0 .
+      - name: Run smoke test
+        run: |
+          docker run \
+            --rm \
+            --network none \
+            --read-only \
+            --tmpfs /tmp:rw \
+            --entrypoint /bin/bash \
+            --volume "$PWD/scripts/smoke-17.0.sh:/tmp/smoke-17.0.sh:ro" \
+            odoo-runner:17.0 \
+            /tmp/smoke-17.0.sh
