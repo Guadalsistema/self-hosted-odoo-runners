@@ -95,7 +95,7 @@ RUN mkdir -p /mnt/extra-addons && \
 ###############################################################################
 USER runner
 
-RUN pip install --no-cache-dir 'pypdf'
+RUN pip install --no-cache-dir 'pypdf' 'pycups'
 
 WORKDIR /home/runner/actions-runner
 ENTRYPOINT ["/home/runner/actions-runner/entrypoint.sh"]
