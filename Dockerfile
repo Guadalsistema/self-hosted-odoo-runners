@@ -6,6 +6,11 @@ FROM docker.io/library/odoo:17.0
 USER root
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
+    sed -i \
+      -e 's|http://archive.ubuntu.com/ubuntu|http://azure.archive.ubuntu.com/ubuntu|g' \
+      -e 's|http://security.ubuntu.com/ubuntu|http://azure.archive.ubuntu.com/ubuntu|g' \
+      /etc/apt/sources.list; \
+    printf '%s\n' 'Acquire::Retries "3";' 'Acquire::http::Timeout "30";' > /etc/apt/apt.conf.d/80-network-resilience; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         locales && \
@@ -18,7 +23,7 @@ RUN set -eux; \
     \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl gnupg lsb-release jq git ca-certificates sudo procps nodejs && \
+        build-essential libcups2-dev curl gnupg lsb-release jq git ca-certificates sudo procps nodejs && \
     \
     curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
         gpg --dearmor -o /usr/share/keyrings/postgresql.gpg && \
