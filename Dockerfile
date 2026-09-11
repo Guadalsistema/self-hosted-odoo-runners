@@ -23,7 +23,7 @@ RUN set -eux; \
     \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential libcups2-dev curl gnupg lsb-release jq git ca-certificates sudo procps nodejs && \
+        build-essential libcups2-dev python3-dev curl gnupg lsb-release jq git ca-certificates sudo procps nodejs && \
     \
     curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
         gpg --dearmor -o /usr/share/keyrings/postgresql.gpg && \
