@@ -9,6 +9,7 @@ RUN set -eux; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         bash ca-certificates curl git gzip jq make procps sudo tar \
+        tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa \
         libgssapi-krb5-2 libicu76 liblttng-ust1t64 libssl3t64 libunwind8 \
         libgcc-s1 libstdc++6 zlib1g && \
     rm -rf /var/lib/apt/lists/*

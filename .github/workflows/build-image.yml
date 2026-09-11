@@ -25,6 +25,9 @@ jobs:
             test -x /tmp/runner-test-venv/bin/python
             /tmp/runner-test-venv/bin/python -m pip install "grpcio>=1.83"
             make --version
+            tesseract --version
+            tesseract --list-langs | grep -Fx eng
+            tesseract --list-langs | grep -Fx spa
           '
           runner_version=2.336.0
           docker run --rm --entrypoint /bin/sh \

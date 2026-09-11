@@ -20,6 +20,8 @@ The image is based on `python:3.14-slim`. It provides:
 - Python 3.14, `pip`, and the standard-library `venv` module
 - The `make` binary, plus common runner utilities such as Bash, Git, curl,
   jq, and tar
+- Tesseract OCR with English and Spanish language data for media extraction
+  end-to-end workflows
 
 No repository Makefile is provided. The `make` binary is available so each
 project can provide and invoke its own Makefile, if desired.
